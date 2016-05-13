@@ -22,6 +22,8 @@ ISR(ADC_vect);
 int game(char dino);
 int obstacleGenerator();
 void die();
+void clearLcd();
+void writeLines(char *top, char *bottom);
 
 /*Global Variable Declarations*/
 int ADCValue;
@@ -62,7 +64,8 @@ int main() {
         LCD_write("Press PC0");
 
         while((PINC & (1 << PC0)) == (1 << PC0));
-        charSelection();
+        dino = charSelection();
+        game_status = game(dino);
         // LCD_command(LCD_CLEAR);
         // _delay_ms(5);
         // LCD_write("Do you feel");
@@ -83,12 +86,12 @@ char charSelection() {
     char dino;
     char dino_family[] = {'f', 'q', 0x5C, 0xFC, 0xE6};
 
-    LCD_command(LCD_CLEAR);
-    _delay_ms(5);
-    LCD_write("Select Your Dino");
-    LCD_command(LCD_NEW_LINE); //Change the line
-
-    while(1){
+    clearLcd();
+    writeLines("Select Your Dino", "");
+    // LCD_write("Select Your Dino");
+    // LCD_command(LCD_NEW_LINE); //Change the line
+    while((PINC & (1 << PC0)) != (1 << PC0));
+    while((PINC & (1 << PC0)) == (1 << PC0)){
         dino = dino_family[ADCValue];
         LCD_putchar(dino);
         LCD_command(LCD_CARRIAGE_RETURN); //Change the line
@@ -104,15 +107,28 @@ char charSelection() {
  * return: 1 when we die
  */
 int game(char dino) {
+    int i;
+    char obstacle_buffer[] = "_______ ___#___o";
+    char top_display_buffer[] = "                ";
+    char bottom_display_buffer[] = "________________";
 
+    while (1) {
+        writeLines(top_display_buffer, bottom_display_buffer);
+        _delay_ms(500);
+
+        for(i = 0; i < sizeof(bottom_display_buffer); i++){
+            bottom_display_buffer[i] = obstacle_buffer[i];
+        }
+    }
+
+    return 0;
 }
 
 /*
  * Will be executed when the dino dies.
  */
 void die(){
-    LCD_command(LCD_CLEAR);
-    _delay_ms(5);
+    clearLcd();
     LCD_write("R.I.P. Dino! :(");
     LCD_command(LCD_NEW_LINE); //Change the line
     LCD_write("PC3 - Next Life");
@@ -142,4 +158,27 @@ ISR(ADC_vect){
 
     //Let's start the conversion again (as it was automatically disabled whet the interrupt fired)
     ADCSRA |= (1 << ADSC);
+}
+
+/**
+ * Clear and delay
+ */
+void clearLcd(){
+    LCD_command(LCD_CLEAR);
+    _delay_ms(5);
+}
+
+/**
+ * Clear and write lines to LCD
+ * @param top    [description]
+ * @param bottom [description]
+ */
+void writeLines(char *top, char *bottom){
+    clearLcd();
+
+    LCD_write(top);
+    LCD_command(LCD_NEW_LINE);
+    LCD_write(bottom);
+
+    _delay_ms(5);
 }

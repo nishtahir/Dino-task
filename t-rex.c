@@ -29,8 +29,8 @@ void writeLines(char *top, char *bottom);
 int ADCValue;
 
 /*
- * The main program
- */
+* The main program
+*/
 int main() {
     char dino;
     int game_status;
@@ -57,20 +57,10 @@ int main() {
     ADCSRA |= (1 << ADSC); //
     /* Actual program starts here */
     while(1){
-        LCD_command(LCD_CLEAR); // clear lcd
-        _delay_ms(5);
-        LCD_write("Select Your Dino");
-        LCD_command(LCD_NEW_LINE); //Change the line
-        LCD_write("Press PC0");
-
+        writeLines("Select Your Dino", "Press PC0");
         while((PINC & (1 << PC0)) == (1 << PC0));
         dino = charSelection();
         game_status = game(dino);
-        // LCD_command(LCD_CLEAR);
-        // _delay_ms(5);
-        // LCD_write("Do you feel");
-        // LCD_command(LCD_NEW_LINE); //Change the line
-        // LCD_write("in charge?");
         _delay_ms(500);
     }
 
@@ -78,10 +68,10 @@ int main() {
 }
 
 /*
- * Select a dino to play with.
- *
- * Return: The chosen dino character
- */
+* Select a dino to play with.
+*
+* Return: The chosen dino character
+*/
 char charSelection() {
     char dino;
     char dino_family[] = {'f', 'q', 0x5C, 0xFC, 0xE6};
@@ -101,14 +91,17 @@ char charSelection() {
 }
 
 /* The dino game
- *
- * char dino: the dino character we are going to play with
- *
- * return: 1 when we die
- */
+*
+* char dino: the dino character we are going to play with
+*
+* return: 1 when we die
+*/
 int game(char dino) {
     int i;
-    char obstacle_buffer[] = "_______ ___#___o";
+    int jumping = 0;
+
+    char temp_char;
+    char obstacle_buffer[] = "_____ ____#___o_";
     char top_display_buffer[] = "                ";
     char bottom_display_buffer[] = "________________";
 
@@ -119,14 +112,33 @@ int game(char dino) {
         for(i = 0; i < sizeof(bottom_display_buffer); i++){
             bottom_display_buffer[i] = obstacle_buffer[i];
         }
+
+        temp_char = obstacle_buffer[0];
+
+        for(i = 0; i < sizeof(obstacle_buffer) - 1; i++){
+            // bottom_display_buffer[i] = obstacle_buffer[i];
+            obstacle_buffer[i] = obstacle_buffer[i + 1];
+        }
+        obstacle_buffer[15] = temp_char;
+
+        if((PINC & (1 << PC0)) != (1 << PC0)){
+            top_display_buffer[1] = dino;
+        } else {
+            top_display_buffer[1] = ' ';
+            bottom_display_buffer[1] = dino;
+
+            if(obstacle_buffer[1] != '_'){
+                die();
+            }
+        }
     }
 
     return 0;
 }
 
 /*
- * Will be executed when the dino dies.
- */
+* Will be executed when the dino dies.
+*/
 void die(){
     clearLcd();
     LCD_write("R.I.P. Dino! :(");
@@ -144,8 +156,8 @@ void die(){
 }
 
 /*
- *Catch the interrupts made by the ADC and calculate the value of the ADC
- */
+*Catch the interrupts made by the ADC and calculate the value of the ADC
+*/
 //Catch the interrupts of the ADC
 ISR(ADC_vect){
 
@@ -161,24 +173,25 @@ ISR(ADC_vect){
 }
 
 /**
- * Clear and delay
- */
+* Clear LCD
+*/
 void clearLcd(){
     LCD_command(LCD_CLEAR);
     _delay_ms(5);
 }
 
 /**
- * Clear and write lines to LCD
- * @param top    [description]
- * @param bottom [description]
- */
+* Clear and write lines to LCD
+* @param top    text for top segment
+* @param bottom text for bottom segment
+*/
 void writeLines(char *top, char *bottom){
     clearLcd();
 
     LCD_write(top);
+    _delay_ms(5);
     LCD_command(LCD_NEW_LINE);
+    _delay_ms(5);
     LCD_write(bottom);
-
     _delay_ms(5);
 }

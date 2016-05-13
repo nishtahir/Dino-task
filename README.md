@@ -7,3 +7,5 @@ cask
 ```
 brew cask install virtualbox-extension-pack
 ```
+
+![Dino in action](https://cloud.githubusercontent.com/assets/2018617/15256649/2339df72-194b-11e6-8e35-d6622677beb2.jpg)
